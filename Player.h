@@ -18,11 +18,14 @@ public:
 private:
     int len;
     bool isPlaying;
-    bool *isStop;
+    bool isStop;
     bool isHold;
     Mog *notes;
     Player *play(Mog oneNote);
-    void waitNextNote(unsigned int dly, unsigned int rate, bool *tag);
+    void waitNextNote(unsigned int dly, unsigned int rate);
+    unsigned short readForShort(File file);
+    short randomShort(short smin, short smax);
+    void delayWithBreak(unsigned int dly, unsigned int rate);
 };
 
 #endif

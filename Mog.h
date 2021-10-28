@@ -3,7 +3,6 @@
 
 struct Mog
 {
-    Mog * next;
     char note;
     unsigned short dly;
 };
