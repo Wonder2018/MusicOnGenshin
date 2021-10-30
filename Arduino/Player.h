@@ -12,6 +12,7 @@ public:
     Player();
     ~Player();
     Player *init(File file);
+    Player *playWhileReading(File file);
     Player *start();
     Player *stop();
 
@@ -26,6 +27,7 @@ private:
     unsigned short readForShort(File file);
     short randomShort(short smin, short smax);
     void delayWithBreak(unsigned int dly, unsigned int rate);
+    void initState();
 };
 
 #endif

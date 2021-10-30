@@ -51,13 +51,18 @@ void setup()
     Utils::logln(F("inited Serial"));
     Utils::logln(F("initing Keyboard"));
     Keyboard.begin();
-    Utils::logln(F("initing SD"));
     if (Utils::isDebug)
     {
         int ramSize = Utils::avaliableMemory();
         Utils::log(F("ram size:"));
         Utils::logln(ramSize);
     }
+}
+
+void loop()
+{
+    waitToStart();
+    Utils::logln(F("initing SD"));
     if (initSD())
     {
         Utils::logln(F("Succeed!"));
@@ -65,9 +70,9 @@ void setup()
         Utils::logln(F("loading melody - open"));
         File melody = SD.open(F(FILE_NAME), FILE_READ);
         player = new Player();
-        Utils::logln(F("loading melody - read"));
-        player->init(melody);
-        Utils::logln(F("Succeed!"));
+        Utils::logln(F("loading melody - play on read"));
+        player->playWhileReading(melody);
+        Utils::logln(F("Over!"));
         melody.close();
         SD.end();
     }
@@ -75,14 +80,4 @@ void setup()
     {
         Utils::logln(F("Faild!"));
     }
-}
-
-void loop()
-{
-    waitToStart();
-    Utils::log(F("size of player:"));
-    Utils::logln(sizeof(player));
-    Utils::log(F("size of *player:"));
-    Utils::logln(sizeof(*player));
-    player->start();
 };

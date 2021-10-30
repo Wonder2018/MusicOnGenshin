@@ -82,6 +82,29 @@ Player *Player::init(File file)
     return this;
 }
 
+Player *Player::playWhileReading(File file)
+{
+    Utils::logln(F("initing..."));
+    len = file.available() / 4;
+    Utils::log(F("len: "));
+    Utils::logln(len);
+    Utils::logln(F("Will start playing when reading!"));
+    Mog mog;
+    for (int ind = 0; ind < len; ind++)
+    {
+        if (isStop)
+        {
+            Keyboard.releaseAll();
+            return this;
+        }
+        file.read();
+        mog.note = file.read();
+        mog.dly = readForShort(file);
+        play(mog);
+    }
+    initState();
+}
+
 Player *Player::start()
 {
     Utils::logln(F("in start!"));
@@ -104,10 +127,7 @@ Player *Player::start()
         }
         this->play(notes[ind]);
     }
-    isPlaying = false;
-    isStop = false;
-    isHold = false;
-    Utils::logln(F("over!"));
+    initState();
 }
 
 Player *Player::stop()
@@ -147,4 +167,10 @@ Player *Player::play(Mog oneNote)
 void Player::waitNextNote(unsigned int dly, unsigned int rate)
 {
     delayWithBreak(dly, rate);
+}
+
+void Player::initState(){
+    isPlaying = false;
+    isStop = false;
+    isHold = false;
 }

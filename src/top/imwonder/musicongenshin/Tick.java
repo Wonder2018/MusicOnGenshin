@@ -10,6 +10,8 @@ import java.util.List;
 
 public class Tick {
 
+    public static final byte ZERO = 0;
+
     private List<Tone> tones;
 
     private short delay;
@@ -28,9 +30,8 @@ public class Tick {
         while (itone.hasNext()) {
             Tone item = itone.next();
             out.write(transShortToBytes((short) item.getKey()));
-            short addi = 0;
             if (itone.hasNext()) {
-                out.write(transShortToBytes(addi));
+                out.write(transShortToBytes(ZERO));
             } else {
                 out.write(transShortToBytes(delay));
             }
