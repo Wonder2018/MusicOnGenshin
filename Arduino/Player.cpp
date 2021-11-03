@@ -18,68 +18,9 @@ short Player::randomShort(short smin, short smax)
     return (short)random(smin, smax);
 }
 
-void Player::delayWithBreak(unsigned int dly, unsigned int rate)
-{
-    if (isStop)
-    {
-        return;
-    }
-    if (dly < rate)
-    {
-        delay(dly);
-        return;
-    }
-    delay(rate);
-    return delayWithBreak(dly - rate, rate);
-}
-
 Player::Player()
 {
-    isPlaying = false;
-    isStop = false;
     isHold = false;
-}
-
-Player::~Player()
-{
-    free(notes);
-    notes = nullptr;
-}
-
-Player *Player::init(File file)
-{
-    Utils::logln(F("initing..."));
-    len = file.available() / 4;
-    Utils::log(F("len: "));
-    Utils::logln(len);
-    // if (notes != nullptr)
-    // {
-    //     // Utils::logln(F("free notes!"));
-    //     free(notes);
-    // }
-    int ramSize = Utils::avaliableMemory();
-    Utils::log(F("ram size:"));
-    Utils::logln(ramSize);
-    Utils::logln(F("create new notes"));
-    int size = sizeof(Mog);
-    Utils::log(F("sizeof mog: "));
-    Utils::logln(size);
-    if (ramSize < len * size)
-    {
-        len = 0;
-        return;
-    }
-    notes = (Mog *)calloc(len, size);
-    Utils::logln(F("create Mog"));
-    for (int ind = 0; ind < len; ind++)
-    {
-        Mog mog;
-        file.read();
-        mog.note = file.read();
-        mog.dly = readForShort(file);
-        notes[ind] = mog;
-    }
-    return this;
 }
 
 Player *Player::playWhileReading(File file)
@@ -90,49 +31,16 @@ Player *Player::playWhileReading(File file)
     Utils::logln(len);
     Utils::logln(F("Will start playing when reading!"));
     Mog mog;
+    readNextNote(&mog, file);
+    unsigned long dly = mog.dly;
     for (int ind = 0; ind < len; ind++)
     {
-        if (isStop)
-        {
-            Keyboard.releaseAll();
-            return this;
-        }
-        file.read();
-        mog.note = file.read();
-        mog.dly = readForShort(file);
         play(mog);
+        dly = mog.dly;
+        readNextNote(&mog, file);
+        waitNextNote(dly);
     }
     initState();
-}
-
-Player *Player::start()
-{
-    Utils::logln(F("in start!"));
-    if (isPlaying)
-    {
-        return this;
-    }
-    isPlaying = true;
-    Utils::log(F("start with "));
-    Utils::log(len);
-    Utils::logln(F("notes."));
-    for (int ind = 0; ind < len; ind++)
-    {
-        Utils::log(F("play:"));
-        Utils::logln(ind);
-        if (isStop)
-        {
-            Keyboard.releaseAll();
-            return this;
-        }
-        this->play(notes[ind]);
-    }
-    initState();
-}
-
-Player *Player::stop()
-{
-    isStop = true;
 }
 
 Player *Player::play(Mog oneNote)
@@ -141,36 +49,89 @@ Player *Player::play(Mog oneNote)
     char note = oneNote.note;
     if (note == 'P')
     {
-        this->waitNextNote(dly + randomShort(-10, 10), 10);
+        lastNoteTs = millis();
+        return;
     }
-    else if (dly < 10)
+    else if (dly < 1)
     {
         isHold = true;
+        // Utils::log(F("play at:"));
+        Utils::log((unsigned int)millis());
+        Utils::log(F("--"));
         Keyboard.press(note);
-        this->waitNextNote(randomShort(6, 15), 10);
+        Utils::logln((unsigned int)millis());
     }
     else if (isHold)
     {
+        // Utils::log(F("play at:"));
+        Utils::log((unsigned int)millis());
+        Utils::log(F("--"));
         Keyboard.press(note);
+        lastNoteTs = millis();
+        Utils::logln((unsigned int)lastNoteTs);
         isHold = false;
         Keyboard.releaseAll();
-        this->waitNextNote(dly + randomShort(-10, 10), 10);
     }
     else
     {
+        // Utils::log(F("play at:"));
+        Utils::log((unsigned int)millis());
+        Utils::log(F("--"));
         Keyboard.print(note);
-        this->waitNextNote(dly + randomShort(-10, 10), 10);
+        lastNoteTs = millis();
+        Utils::logln((unsigned int)lastNoteTs);
     }
     return this;
 }
 
-void Player::waitNextNote(unsigned int dly, unsigned int rate)
+void Player::readNextNote(Mog *mog, File file)
 {
-    delayWithBreak(dly, rate);
+    file.read();
+    (*mog).note = file.read();
+    (*mog).dly = readForShort(file);
 }
 
-void Player::initState(){
-    isPlaying = false;
-    isStop = false;
+void Player::waitNextNote(unsigned long dly)
+{
+    Utils::log(F("dly: "));
+    Utils::logln(dly);
+    byte tag = needJitter;
+    tag <<= 1;
+    if (dly)
+    {
+        tag += 1;
+    }
+
+    Utils::log(F("tag: "));
+    Utils::logln(tag);
+    switch (tag)
+    {
+    case 0b10:
+        Utils::log(F("1"));
+        delay(randomShort(6, 15));
+        return;
+    case 0b00:
+        Utils::log(F("2"));
+        return;
+    case 0b11:
+        Utils::log(F("3"));
+        dly = dly + randomShort(-10, 10);
+        break;
+    default:
+        Utils::log(F("4"));
+        break;
+    }
+    dly = dly - millis() + lastNoteTs;
+    Utils::logln(F("new dly!"));
+    if (dly > 0)
+    {
+        Utils::log(F("dling:"));
+        Utils::logln(dly);
+        delay(dly);
+    }
+}
+
+void Player::initState()
+{
     isHold = false;
 }

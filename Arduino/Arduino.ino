@@ -14,8 +14,6 @@ const uint8_t SWITCH_PIN PROGMEM = 8;
 const uint8_t CHIP_SELECT PROGMEM = 4;
 const uint8_t DEBUG_PIN PROGMEM = 7;
 
-Player *player;
-
 bool initSD()
 {
     if (!SD.begin(CHIP_SELECT))
@@ -69,8 +67,9 @@ void loop()
         // 读取乐谱
         Utils::logln(F("loading melody - open"));
         File melody = SD.open(F(FILE_NAME), FILE_READ);
-        player = new Player();
+        Player *player = new Player();
         Utils::logln(F("loading melody - play on read"));
+        player->needJitter = false;
         player->playWhileReading(melody);
         Utils::logln(F("Over!"));
         melody.close();

@@ -9,24 +9,19 @@
 class Player
 {
 public:
+    bool needJitter;
     Player();
-    ~Player();
-    Player *init(File file);
     Player *playWhileReading(File file);
-    Player *start();
-    Player *stop();
 
 private:
     int len;
-    bool isPlaying;
-    bool isStop;
     bool isHold;
-    Mog *notes;
+    unsigned long lastNoteTs;
     Player *play(Mog oneNote);
-    void waitNextNote(unsigned int dly, unsigned int rate);
+    void readNextNote(Mog *mog, File file);
+    void waitNextNote(unsigned long dly);
     unsigned short readForShort(File file);
     short randomShort(short smin, short smax);
-    void delayWithBreak(unsigned int dly, unsigned int rate);
     void initState();
 };
 
