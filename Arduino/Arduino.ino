@@ -12,7 +12,6 @@ typedef unsigned char byte;
 
 const uint8_t SWITCH_PIN PROGMEM = 8;
 const uint8_t CHIP_SELECT PROGMEM = 4;
-const uint8_t DEBUG_PIN PROGMEM = 7;
 
 bool initSD()
 {
@@ -26,7 +25,6 @@ bool initSD()
 
 void waitToStart()
 {
-    Utils::logln(F("in wait!"));
     while (!digitalRead(SWITCH_PIN))
     {
         digitalWrite(LED_BUILTIN, HIGH);
@@ -41,42 +39,24 @@ void setup()
     // 初始化针脚
     pinMode(SWITCH_PIN, INPUT_PULLUP);
     pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(DEBUG_PIN, INPUT_PULLUP);
-    // 检测调试模式
-    Utils::isDebug = !digitalRead(DEBUG_PIN);
+    // 关闭调试模式
+    Utils::isDebug = false;
     // 传送开机信息
     Utils::blink(4);
-    Utils::logln(F("inited Serial"));
-    Utils::logln(F("initing Keyboard"));
     Keyboard.begin();
-    if (Utils::isDebug)
-    {
-        int ramSize = Utils::avaliableMemory();
-        Utils::log(F("ram size:"));
-        Utils::logln(ramSize);
-    }
 }
 
 void loop()
 {
     waitToStart();
-    Utils::logln(F("initing SD"));
     if (initSD())
     {
-        Utils::logln(F("Succeed!"));
         // 读取乐谱
-        Utils::logln(F("loading melody - open"));
         File melody = SD.open(F(FILE_NAME), FILE_READ);
         Player *player = new Player();
-        Utils::logln(F("loading melody - play on read"));
         player->needJitter = false;
         player->playWhileReading(melody);
-        Utils::logln(F("Over!"));
         melody.close();
         SD.end();
-    }
-    else
-    {
-        Utils::logln(F("Faild!"));
     }
 };

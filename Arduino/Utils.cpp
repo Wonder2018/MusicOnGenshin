@@ -65,14 +65,8 @@ void Utils::logln(const int num)
 
 int Utils::avaliableMemory()
 {
-    logln(F("in memory count!"));
-    log(F("sizeof int: "));
-    logln(sizeof(int));
     int size = 1;
-    log(F("sizeof *byte: "));
     byte *buf;
-    logln(sizeof(buf));
-    logln(F("strat test!"));
     while ((buf = (byte *)malloc(size++)) != NULL)
     {
         free(buf);

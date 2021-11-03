@@ -25,11 +25,7 @@ Player::Player()
 
 Player *Player::playWhileReading(File file)
 {
-    Utils::logln(F("initing..."));
     len = file.available() / 4;
-    Utils::log(F("len: "));
-    Utils::logln(len);
-    Utils::logln(F("Will start playing when reading!"));
     Mog mog;
     readNextNote(&mog, file);
     unsigned long dly = mog.dly;
@@ -55,31 +51,19 @@ Player *Player::play(Mog oneNote)
     else if (dly < 1)
     {
         isHold = true;
-        // Utils::log(F("play at:"));
-        Utils::log((unsigned int)millis());
-        Utils::log(F("--"));
         Keyboard.press(note);
-        Utils::logln((unsigned int)millis());
     }
     else if (isHold)
     {
-        // Utils::log(F("play at:"));
-        Utils::log((unsigned int)millis());
-        Utils::log(F("--"));
         Keyboard.press(note);
         lastNoteTs = millis();
-        Utils::logln((unsigned int)lastNoteTs);
         isHold = false;
         Keyboard.releaseAll();
     }
     else
     {
-        // Utils::log(F("play at:"));
-        Utils::log((unsigned int)millis());
-        Utils::log(F("--"));
         Keyboard.print(note);
         lastNoteTs = millis();
-        Utils::logln((unsigned int)lastNoteTs);
     }
     return this;
 }
@@ -93,8 +77,6 @@ void Player::readNextNote(Mog *mog, File file)
 
 void Player::waitNextNote(unsigned long dly)
 {
-    Utils::log(F("dly: "));
-    Utils::logln(dly);
     byte tag = needJitter;
     tag <<= 1;
     if (dly)
@@ -102,31 +84,22 @@ void Player::waitNextNote(unsigned long dly)
         tag += 1;
     }
 
-    Utils::log(F("tag: "));
-    Utils::logln(tag);
     switch (tag)
     {
     case 0b10:
-        Utils::log(F("1"));
         delay(randomShort(6, 15));
         return;
     case 0b00:
-        Utils::log(F("2"));
         return;
     case 0b11:
-        Utils::log(F("3"));
         dly = dly + randomShort(-10, 10);
         break;
     default:
-        Utils::log(F("4"));
         break;
     }
     dly = dly - millis() + lastNoteTs;
-    Utils::logln(F("new dly!"));
     if (dly > 0)
     {
-        Utils::log(F("dling:"));
-        Utils::logln(dly);
         delay(dly);
     }
 }
