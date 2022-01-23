@@ -1,4 +1,9 @@
-target
+Arduino/target
 .vscode
 bin
 out
+wonderTmp
+src/top/imwonder/musicongenshin/ParseHp*
+src/top/imwonder/musicongenshin/test*
+src/top/imwonder/musicongenshin/ParsePy*
+MusicOnGenshin.jar

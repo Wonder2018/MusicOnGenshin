@@ -1,4 +1,4 @@
-package top.imwonder.musicongenshin;
+package top.imwonder.musicongenshin.pojo;
 
 import static top.imwonder.musicongenshin.MusicOnGenshin.transShortToBytes;
 
@@ -12,7 +12,7 @@ public class Tick {
 
     public static final byte ZERO = 0;
 
-    private List<Tone> tones;
+    private List<LyreToneEnum> tones;
 
     private short delay;
 
@@ -21,14 +21,26 @@ public class Tick {
         this.tones = new ArrayList<>();
     };
 
-    public void addTone(Tone tone) {
+    public void addDelay(Tick tick) {
+        this.delay += tick.delay;
+    }
+
+    public void addDelay(short tick) {
+        this.delay += tick;
+    }
+
+    public void addTone(LyreToneEnum tone) {
         tones.add(tone);
     }
 
+    public boolean isPause() {
+        return tones.indexOf(LyreToneEnum.STOP) > -1;
+    }
+
     public void write(OutputStream out) throws IOException {
-        Iterator<Tone> itone = tones.iterator();
+        Iterator<LyreToneEnum> itone = tones.iterator();
         while (itone.hasNext()) {
-            Tone item = itone.next();
+            LyreToneEnum item = itone.next();
             out.write(transShortToBytes((short) item.getKey()));
             if (itone.hasNext()) {
                 out.write(transShortToBytes(ZERO));

@@ -28,7 +28,7 @@ Player *Player::playWhileReading(File file)
     len = file.available() / 4;
     Mog mog;
     readNextNote(&mog, file);
-    unsigned long dly = mog.dly;
+    int dly = mog.dly;
     for (int ind = 0; ind < len; ind++)
     {
         play(mog);
@@ -75,7 +75,7 @@ void Player::readNextNote(Mog *mog, File file)
     (*mog).dly = readForShort(file);
 }
 
-void Player::waitNextNote(unsigned long dly)
+void Player::waitNextNote(int dly)
 {
     byte tag = needJitter;
     tag <<= 1;
@@ -87,9 +87,7 @@ void Player::waitNextNote(unsigned long dly)
     switch (tag)
     {
     case 0b10:
-        delay(randomShort(6, 15));
-        return;
-    case 0b00:
+        delay(randomShort(0, 10));
         return;
     case 0b11:
         dly = dly + randomShort(-10, 10);
@@ -97,7 +95,7 @@ void Player::waitNextNote(unsigned long dly)
     default:
         break;
     }
-    dly = dly - millis() + lastNoteTs;
+    dly = dly - (int)(millis() - lastNoteTs);
     if (dly > 0)
     {
         delay(dly);

@@ -8,16 +8,24 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+
+import top.imwonder.musicongenshin.pojo.Tick;
+import top.imwonder.musicongenshin.pojo.LyreToneEnum;
 
 public class MusicOnGenshin {
 
     public static void main(String[] args) throws IOException {
+        String fin = null;
+        String fon = null;
         Properties config = new Properties();
         config.load(new FileReader("config.properties"));
-        File scriptIn = new File(config.getProperty("input"));
-        File binOut = new File(config.getProperty("output"));
+        fin = args.length > 0 ? args[0] : config.getProperty("input");
+        fon = args.length > 1 ? args[1] : config.getProperty("output");
+        File scriptIn = new File(fin);
+        File binOut = new File(fon);
         System.out.println("Output path: " + binOut.getAbsolutePath());
         cook(scriptIn, binOut);
     }
@@ -54,23 +62,24 @@ public class MusicOnGenshin {
         int len = tones.length;
         for (int i = 0; i < len; i++) {
             switch (tones[i]) {
-            case '+':
-                i++;
-                tick.addTone(Tone.getToneByRecord("+" + tones[i]));
-                break;
-            case '-':
-                i++;
-                tick.addTone(Tone.getToneByRecord("-" + tones[i]));
-                break;
-            default:
-                tick.addTone(Tone.getToneByRecord("" + tones[i]));
-                break;
+                case '+':
+                    i++;
+                    tick.addTone(LyreToneEnum.getToneByRecord("+" + tones[i]));
+                    break;
+                case '-':
+                    i++;
+                    tick.addTone(LyreToneEnum.getToneByRecord("-" + tones[i]));
+                    break;
+                default:
+                    tick.addTone(LyreToneEnum.getToneByRecord("" + tones[i]));
+                    break;
             }
         }
         return tick;
     }
 
     public static void writeBin(OutputStream out, List<Tick> ticks) throws IOException {
+        ticks = trimTicks(ticks);
         for (Tick tick : ticks) {
             tick.write(out);
         }
@@ -80,5 +89,21 @@ public class MusicOnGenshin {
         byte b[] = new byte[] { (byte) (value >> 8), (byte) value };
         ;
         return b;
+    }
+
+    public static List<Tick> trimTicks(List<Tick> ticks) {
+        Iterator<Tick> it = ticks.iterator();
+        while (it.hasNext()) {
+            Tick tick = it.next();
+            if (tick.isPause()) {
+                int ind = ticks.indexOf(tick);
+                if (ind != 0) {
+                    ticks.get(ind - 1).addDelay(tick);
+                    it.remove();
+                    continue;
+                }
+            }
+        }
+        return ticks;
     }
 }
