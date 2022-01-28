@@ -41,7 +41,7 @@ public class ParseMidi {
     private static byte minNote = Byte.MAX_VALUE;
 
     public static void main(String[] args) throws FileNotFoundException, IOException, InvalidMidiDataException {
-        String fin = "wonderTmp/Rubia-for-genshin-rpn.mid";
+        String fin = "wonderTmp/Rubia-for-genshin.mid";
         String fon = "wonderTmp/rubia-2";
         // Properties config = new Properties();
         // config.load(new FileReader("config.properties"));
@@ -70,32 +70,37 @@ public class ParseMidi {
         MidiMessage message;
         ShortMessage shortMessage;
         MetaMessage metaMessage;
+        int metaType;
         Note note;
 
-        //     Track track = midi.getTracks()[0];
         for (Track track : midi.getTracks()) {
             trackSize = track.size();
             for (int i = 0; i < trackSize; i++) {
                 event = track.get(i);
                 message = event.getMessage();
+                byte[] msgData = event.getMessage().getMessage();
                 if (message instanceof ShortMessage) {
                     shortMessage = (ShortMessage) message;
-                    if (shortMessage.getCommand() == ShortMessage.NOTE_ON) {
+                    if (shortMessage.getCommand() == ShortMessage.NOTE_ON && msgData[2] != 0) {
                         if (speed == 0) {
                             out.println("Warn: midi文件未设置速度！将使用默认速度 " + DEFAULT_SPEED);
                             speed = 60000f / DEFAULT_SPEED / midi.getResolution();
                         }
-                        note = new Note(event.getTick(), (byte) shortMessage.getData1(), speed);
+                        note = new Note(event.getTick(), (byte) (shortMessage.getData1()), speed);
                         noteList.add(note);
                         maxNote = maxNote > note.getNote() ? maxNote : note.getNote();
                         minNote = minNote < note.getNote() ? minNote : note.getNote();
                     }
                 } else if (message instanceof MetaMessage) {
                     metaMessage = (MetaMessage) message;
-                    if (metaMessage.getType() != 0x51) {
-                        continue;
+                    metaType = metaMessage.getType();
+                    switch (metaType) {
+                        case 0x51:
+                            speed = ((float) readSpeed(metaMessage.getData())) / ((float) (midi.getResolution()));
+                            break;
+                        default:
+                            break;
                     }
-                    speed = ((float)readSpeed(metaMessage.getData())) / ((float)(midi.getResolution()));
                 }
             }
         }
@@ -104,14 +109,12 @@ public class ParseMidi {
     }
 
     private static List<Note> toLyreNotes(List<Note> notes) throws IOException {
-        if (maxNote - minNote > 35) {
-            changeArea();
-        }
+        checkRange(notes);
         List<Note> lyreNotes = new ArrayList<>();
         int countBlk = 0;
         byte noteNum;
         for (Note note : notes) {
-            noteNum = to36Key(note.getNote());
+            noteNum = to36Key(note.getNote(), minNote);
             if (noteNum < 0) {
                 continue;
             }
@@ -133,7 +136,7 @@ public class ParseMidi {
         for (Note note : notes) {
             notTick = note.getTick();
             if (notTick != seqTick) {
-                if (speed==0) {
+                if (speed == 0) {
                     speed = note.getSpeed();
                 }
                 tick.addDelay((short) ((notTick - seqTick) * speed));
@@ -147,8 +150,8 @@ public class ParseMidi {
         return ticks;
     }
 
-    private static byte to36Key(byte noteNum) {
-        byte rst = (byte) (noteNum - minNote);
+    private static byte to36Key(byte noteNum, byte move) {
+        byte rst = (byte) (noteNum - move);
         if (rst < 36) {
             return rst;
         }
@@ -161,7 +164,16 @@ public class ParseMidi {
         return (byte) (level * 7 + KEY_MAP[index]);
     }
 
-    private static void changeArea() throws IOException {
+    private static void checkRange(List<Note> notes) throws IOException {
+        if (maxNote - minNote > 35) {
+            narrowRange();
+        }
+        if (maxNote - maxNote < 35) {
+            selectRange(notes);
+        }
+    }
+
+    private static void narrowRange() throws IOException {
         PianoToneEnum dftMaxTone = PianoToneEnum.getToneByMidiCode(maxNote);
         PianoToneEnum dftMinTone = PianoToneEnum.getToneByMidiCode(minNote);
         PianoToneEnum maxTone;
@@ -205,6 +217,30 @@ public class ParseMidi {
             }
             out.println("输入无效，请重新输入！");
         }
+    }
+
+    private static int selectRange(List<Note> notes) {
+        if (maxNote - minNote == 35) {
+            return minNote;
+        }
+        out.println("您选择的音域不是 36 将自动匹配黑键最少的方案！");
+        byte nowMin = (byte) (maxNote - 35);
+        int minCountBlk = Integer.MAX_VALUE;
+        int countBlk = 0;
+        for (byte i = nowMin; i <= minNote; i--) {
+            for (Note note : notes) {
+                if (Arrays.binarySearch(BLKS, to36Key(note.getNote(), i)) > -1) {
+                    countBlk++;
+                }
+            }
+            if (minCountBlk > countBlk) {
+                nowMin = i;
+                minCountBlk = countBlk;
+            }
+            countBlk = 0;
+        }
+        minNote = nowMin;
+        return nowMin;
     }
 
     private static int readSpeed(byte[] tempo) {

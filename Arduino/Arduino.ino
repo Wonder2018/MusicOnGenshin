@@ -25,7 +25,7 @@ bool initSD()
 
 void waitToStart()
 {
-    while (!digitalRead(SWITCH_PIN))
+    while (digitalRead(SWITCH_PIN))
     {
         digitalWrite(LED_BUILTIN, HIGH);
         delay(300);
@@ -54,7 +54,7 @@ void loop()
         // 读取乐谱
         File melody = SD.open(F(FILE_NAME), FILE_READ);
         Player *player = new Player();
-        player->needJitter = true;
+        player->needJitter = false;
         player->playWhileReading(melody);
         melody.close();
         SD.end();

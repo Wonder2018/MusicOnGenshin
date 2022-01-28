@@ -4,21 +4,21 @@ import static top.imwonder.musicongenshin.MusicOnGenshin.transShortToBytes;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Set;
 
 public class Tick {
 
     public static final byte ZERO = 0;
 
-    private List<LyreToneEnum> tones;
+    private Set<LyreToneEnum> tones;
 
     private short delay;
 
     public Tick(int delay) {
         this.delay = (short) delay;
-        this.tones = new ArrayList<>();
+        this.tones = new HashSet<>();
     };
 
     public void addDelay(Tick tick) {
@@ -34,7 +34,7 @@ public class Tick {
     }
 
     public boolean isPause() {
-        return tones.indexOf(LyreToneEnum.STOP) > -1;
+        return tones.contains(LyreToneEnum.STOP);
     }
 
     public void write(OutputStream out) throws IOException {
