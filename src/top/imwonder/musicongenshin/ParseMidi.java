@@ -41,8 +41,8 @@ public class ParseMidi {
     private static byte minNote = Byte.MAX_VALUE;
 
     public static void main(String[] args) throws FileNotFoundException, IOException, InvalidMidiDataException {
-        String fin = "wonderTmp/Rubia-for-genshin.mid";
-        String fon = "wonderTmp/rubia-2";
+        String fin = "wonderTmp/xxsj.mid";
+        String fon = "wonderTmp/xxsj";
         // Properties config = new Properties();
         // config.load(new FileReader("config.properties"));
         // fin = args.length > 0 ? args[0] : config.getProperty("input");
@@ -105,6 +105,8 @@ public class ParseMidi {
             }
         }
         Collections.sort(noteList);
+        out.printf("当前乐谱最高音：%s\n", PianoToneEnum.getToneByMidiCode(maxNote));
+        out.printf("当前乐谱最低音：%s\n", PianoToneEnum.getToneByMidiCode(minNote));
         return noteList;
     }
 
@@ -147,6 +149,7 @@ public class ParseMidi {
             tick.addTone(LyreToneEnum.values()[note.getNote()]);
             speed = note.getSpeed();
         }
+        ticks.add(tick);
         return ticks;
     }
 
@@ -169,7 +172,7 @@ public class ParseMidi {
             narrowRange();
         }
         if (maxNote - maxNote < 35) {
-            selectRange(notes);
+            minNote = selectRange(notes);
         }
     }
 
@@ -219,28 +222,72 @@ public class ParseMidi {
         }
     }
 
-    private static int selectRange(List<Note> notes) {
+    private static int getValidNum(String tip, Integer defaultNum, Integer... nums) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        List<Integer> choseList = new ArrayList<Integer>(Arrays.asList(nums));
+        int num = 0;
+        while (true) {
+            out.print(tip);
+            try {
+                num = Integer.parseInt(reader.readLine());
+                if (choseList.size() == 0) {
+                    return num;
+                } else if (choseList.indexOf(num) > -1) {
+                    return num;
+                }
+            } catch (NumberFormatException e) {
+                if (defaultNum != null) {
+                    return defaultNum;
+                }
+            }
+            out.println("输入无效，请重新输入！");
+        }
+    }
+
+    private static byte selectRange(List<Note> notes) throws IOException {
         if (maxNote - minNote == 35) {
             return minNote;
         }
-        out.println("您选择的音域不是 36 将自动匹配黑键最少的方案！");
+        out.println("当前乐谱音域不是 36 将自动匹配黑键最少的方案！");
         byte nowMin = (byte) (maxNote - 35);
         int minCountBlk = Integer.MAX_VALUE;
         int countBlk = 0;
-        for (byte i = nowMin; i <= minNote; i--) {
+        List<Byte> minList = new ArrayList<>();
+        for (byte i = nowMin; i <= minNote; i++) {
             for (Note note : notes) {
                 if (Arrays.binarySearch(BLKS, to36Key(note.getNote(), i)) > -1) {
                     countBlk++;
                 }
             }
-            if (minCountBlk > countBlk) {
+            if (minCountBlk >= countBlk) {
                 nowMin = i;
                 minCountBlk = countBlk;
+                if (minCountBlk == 0) {
+                    minList.add(i);
+                }
             }
             countBlk = 0;
         }
-        minNote = nowMin;
-        return nowMin;
+        int size = minList.size();
+        if (size == 0) {
+            return nowMin;
+        } else if (size == 1) {
+            return minList.get(0);
+        } else {
+            out.println("匹配到多个黑键数量为 0 的方案：");
+            int ind = 1;
+            List<Integer> indList = new ArrayList<>();
+            for (Byte minCase : minList) {
+                LyreToneEnum lyreKey = LyreToneEnum.values()[toLyreKey(to36Key(minNote, minCase))];
+                out.printf("\t %d. %s -> %s(%s)\n", ind, PianoToneEnum.getToneByMidiCode(minNote),
+                        PianoToneEnum.getToneByMidiCode(minCase),
+                        lyreKey.name());
+                indList.add(ind++);
+            }
+            return minList.get(
+                    getValidNum(String.format("请输入要选择的方案(%d)：", size / 2), size / 2, indList.toArray(new Integer[0]))
+                            - 1);
+        }
     }
 
     private static int readSpeed(byte[] tempo) {

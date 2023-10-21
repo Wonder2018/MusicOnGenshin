@@ -52,10 +52,12 @@ void loop()
     if (initSD())
     {
         // 读取乐谱
+        Keyboard.releaseAll();
         File melody = SD.open(F(FILE_NAME), FILE_READ);
         Player *player = new Player();
         player->needJitter = false;
         player->playWhileReading(melody);
+        Keyboard.releaseAll();
         melody.close();
         SD.end();
     }
